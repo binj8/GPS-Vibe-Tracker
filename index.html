@@ -5,35 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GPS Proximity Tracker</title>
   <style>
-    body { font-family: sans-serif; padding: 2rem; text-align: center; }
-    #status { font-size: 1.5rem; margin-top: 2rem; }
-    #distance { font-size: 2rem; font-weight: bold; color: green; }
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      text-align: center;
+      transition: background-color 0.5s ease;
+    }
+    #status {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+    }
+    #distance {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #333;
+    }
   </style>
 </head>
 <body>
   <h1>Navigate to Target Location</h1>
-  <p>This tool will tell you if you're getting closer or farther from the destination.</p>
+  <p>This tool will tell you if you're getting <strong>warmer</strong> or <strong>cooler</strong>.</p>
   <p id="status">Getting your location...</p>
   <p>Distance to target: <span id="distance">--</span> meters</p>
 
   <script>
-    // Replace these with your target location coordinates
-    const targetLat = 19.0760; // Example: Mumbai latitude
-    const targetLon = 72.8777; // Example: Mumbai longitude
+    const targetLat = 19.0760; // Mumbai latitude
+    const targetLon = 72.8777; // Mumbai longitude
 
     let lastDistance = null;
 
     function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371000; // Radius of the Earth in meters
+      const R = 6371000;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = 
+      const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const d = R * c;
-      return d;
+      return R * c;
     }
 
     function updateLocation(position) {
@@ -45,10 +55,13 @@
 
       if (lastDistance === null) {
         document.getElementById("status").textContent = "Tracking started...";
+        document.body.style.backgroundColor = "#ffffff";
       } else if (distance < lastDistance) {
-        document.getElementById("status").textContent = "You're getting closer!";
+        document.getElementById("status").textContent = "Warmer 🔥";
+        document.body.style.backgroundColor = "#ffe5b4"; // light orange
       } else {
-        document.getElementById("status").textContent = "You're moving away.";
+        document.getElementById("status").textContent = "Cooler ❄️";
+        document.body.style.backgroundColor = "#cce6ff"; // light blue
       }
 
       lastDistance = distance;
@@ -61,8 +74,8 @@
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(updateLocation, showError, {
         enableHighAccuracy: true,
-        maximumAge: 1000,
-        timeout: 10000
+        maximumAge: 0,
+        timeout: 5000
       });
     } else {
       document.getElementById("status").textContent = "Geolocation is not supported by this browser.";
