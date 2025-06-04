@@ -4,9 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GPS Proximity Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Futura+Condensed:wght@700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: 'Futura Condensed', sans-serif;
       padding: 2rem;
       text-align: center;
       transition: background-color 0.5s ease;
@@ -20,6 +22,10 @@
       font-weight: bold;
       color: #333;
     }
+    #message {
+      font-size: 1.75rem;
+      margin-top: 1.5rem;
+    }
   </style>
 </head>
 <body>
@@ -27,12 +33,14 @@
   <p>This tool will tell you if you're getting <strong>warmer</strong> or <strong>cooler</strong>.</p>
   <p id="status">Getting your location...</p>
   <p>Distance to target: <span id="distance">--</span> meters</p>
+  <p id="message"></p>
 
   <script>
-    const targetLat = 19.11419363248632; // Mumbai latitude
-    const targetLon = 72.86530797114392; // Mumbai longitude
+    const targetLat = 19.0760; // Mumbai latitude
+    const targetLon = 72.8777; // Mumbai longitude
 
     let lastDistance = null;
+    let hasCelebrated = false;
 
     function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
       const R = 6371000;
@@ -46,25 +54,65 @@
       return R * c;
     }
 
+    function getEncouragingMessage(distance) {
+      if (distance > 100) return "You're on the way! 🚶‍♂️";
+      if (distance > 50) return "Warming up! 🔥";
+      if (distance > 20) return "Almost there, keep going! 💪";
+      if (distance > 5) return "🔥 You're right on target!";
+      return "🎯 You've caught the vibe!";
+    }
+
+    function getHeatColor(distance) {
+      const minDist = 0;
+      const maxDist = 150;
+      const clampedDist = Math.min(Math.max(distance, minDist), maxDist);
+      const ratio = 1 - clampedDist / maxDist;
+
+      const red = Math.floor(255);
+      const green = Math.floor(255 * ratio);
+      const blue = Math.floor(255 * (1 - ratio));
+
+      return `rgb(${red}, ${green}, ${blue})`;
+    }
+
+    function triggerConfetti() {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+
     function updateLocation(position) {
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
 
       const distance = getDistanceFromLatLonInMeters(lat, lon, targetLat, targetLon);
       document.getElementById("distance").textContent = distance.toFixed(2);
+      document.getElementById("message").textContent = getEncouragingMessage(distance);
+
+      document.body.style.backgroundColor = getHeatColor(distance);
 
       if (lastDistance === null) {
         document.getElementById("status").textContent = "Tracking started...";
-        document.body.style.backgroundColor = "#ffffff";
       } else if (distance < lastDistance) {
         document.getElementById("status").textContent = "Warmer 🔥";
-        document.body.style.backgroundColor = "#ffe5b4"; // light orange
       } else {
         document.getElementById("status").textContent = "Cooler ❄️";
-        document.body.style.backgroundColor = "#cce6ff"; // light blue
       }
 
       lastDistance = distance;
+
+      // Trigger vibration if within 15 meters
+      if (distance <= 15 && 'vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+
+      // Trigger confetti and message if within 5 meters and not already celebrated
+      if (distance <= 5 && !hasCelebrated) {
+        triggerConfetti();
+        hasCelebrated = true;
+      }
     }
 
     function showError(error) {
